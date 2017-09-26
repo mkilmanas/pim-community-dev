@@ -49,7 +49,7 @@ stage("Build") {
             container("docker") {
                 sh "cp vendor/akeneo/pim-community-dev/Dockerfile ."
                 sh "cp -R vendor/akeneo/pim-community-dev/.ci ."
-                sh "cp app/config/parameters_test.yml.dist app/config/parameters_test.yml"
+                sh "cp app/config/parameters.yml.dist app/config/parameters_test.yml"
                 sh "sed -i \"s#database_host: .*#database_host: 127.0.0.1#g\" app/config/parameters_test.yml"
                 sh "sed -i \"s#index_hosts: .*#index_hosts: 'elastic:changeme@127.0.0.1:9200'#g\" app/config/parameters_test.yml"
                 sh "sed \"\$a    installer_data: 'PimEnterpriseInstallerBundle:minimal'\n\" app/config/parameters_test.yml"
@@ -70,7 +70,7 @@ stage("Build") {
                  sh "npm install --color=always"
             }
             container("docker") {
-                sh "cp app/config/parameters_test.yml.dist app/config/parameters_test.yml"
+                sh "cp app/config/parameters.yml.dist app/config/parameters_test.yml"
                 sh "sed -i \"s#database_host: .*#database_host: 127.0.0.1#g\" app/config/parameters_test.yml"
                 sh "sed -i \"s#index_hosts: .*#index_hosts: 'elastic:changeme@127.0.0.1:9200'#g\" app/config/parameters_test.yml"
                 sh "sed \"\$a    installer_data: 'PimInstallerBundle:minimal'\n\" app/config/parameters_test.yml"
@@ -108,7 +108,7 @@ stage("Build") {
                 sh "cp -R vendor/akeneo/pim-community-dev/.ci ."
                 sh "sed -i \"s#http://akeneo#http://127.0.0.1#g\" behat.ci.yml"
                 sh "sed -i \"s#http://selenium#http://127.0.0.1#g\" behat.ci.yml"
-                sh "cp app/config/parameters_test.yml.dist app/config/parameters_test.yml"
+                sh "cp app/config/parameters.yml.dist app/config/parameters_test.yml"
                 sh "sed -i \"s#database_host: .*#database_host: 127.0.0.1#g\" app/config/parameters_test.yml"
                 sh "sed -i \"s#index_hosts: .*#index_hosts: 'elastic:changeme@127.0.0.1:9200'#g\" app/config/parameters_test.yml"
                 sh "sed \"\$a    installer_data: 'PimEnterpriseInstallerBundle:minimal'\n\" app/config/parameters_test.yml"
