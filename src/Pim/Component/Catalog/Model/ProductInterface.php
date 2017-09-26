@@ -104,6 +104,18 @@ interface ProductInterface extends
     public function getGroupCodes();
 
     /**
+     * @param array $rawAssociations
+     *
+     * @return ProductInterface
+     */
+    public function setRawAssociations(array $rawAssociations);
+
+    /**
+     * @return array
+     */
+    public function getRawAssociations();
+
+    /**
      * Get types of associations
      *
      * @return Collection

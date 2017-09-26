@@ -73,6 +73,9 @@ abstract class AbstractProduct implements ProductInterface
     /** @var array */
     protected $groupIds = [];
 
+    /** @var array */
+    protected $rawAssociations;
+
     /** @var Collection $associations */
     protected $associations;
 
@@ -96,6 +99,7 @@ abstract class AbstractProduct implements ProductInterface
         $this->groups = new ArrayCollection();
         $this->associations = new ArrayCollection();
         $this->uniqueData = new ArrayCollection();
+        $this->rawAssociations = [];
         $this->rawCategories = [];
     }
 
@@ -622,6 +626,24 @@ abstract class AbstractProduct implements ProductInterface
     public function __toString()
     {
         return (string) $this->getLabel();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRawAssociations()
+    {
+        return $this->rawAssociations;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setRawAssociations(array $rawAssociations)
+    {
+        $this->rawAssociations = $rawAssociations;
+
+        return $this;
     }
 
     /**
