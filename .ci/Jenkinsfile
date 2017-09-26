@@ -192,7 +192,7 @@ stage("Test") {
                         ])
                     }
                     return messagesCE
-                }, 100, "ce")
+                }, 50, "ce")
             }
     builders["behat-ee"] = {
                 queue({
@@ -221,7 +221,7 @@ stage("Test") {
                         ])
                     }
                     return messagesEE
-                }, 100, "ee")
+                }, 50, "ee")
             }
     builders["behat-ce-odm"] = {
                 queue(
@@ -251,7 +251,7 @@ stage("Test") {
                         ])
                     }
                     return messagesCE
-                }, 100, "ceodm")
+                }, 50, "ceodm")
             }
     builders["behat-ee-odm"] = {
                 queue({
@@ -280,7 +280,7 @@ stage("Test") {
                         ])
                     }
                     return messagesEE
-                }, 100, "eeodm")
+                }, 50, "eeodm")
             }
     try {
         parallel(builders)
