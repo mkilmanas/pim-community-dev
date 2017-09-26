@@ -47,6 +47,9 @@ class ProductModel implements ProductModelInterface
     /** @var int */
     protected $right;
 
+    /** @var array */
+    protected $rawCategories;
+
     /** @var Collection $categories */
     protected $categories;
 
@@ -227,6 +230,24 @@ class ProductModel implements ProductModelInterface
     public function setUpdated($updated): ProductModelInterface
     {
         $this->updated = $updated;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRawCategories()
+    {
+        return $this->rawCategories;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setRawCategories(array $rawCategories)
+    {
+        $this->rawCategories = $rawCategories;
 
         return $this;
     }
