@@ -4,6 +4,13 @@ import org.csanchez.jenkins.plugins.kubernetes.pipeline.PodTemplateAction
 import org.apache.commons.lang.ArrayUtils
 
 stage("Build") {
+    milestone 1
+    if (env.BRANCH_NAME =~ /^PR-/) {
+        timeout(time:5, unit:'DAYS') {
+            input 'Launch your build?'
+        }
+    }
+    milestone 2
     parallel(
         "pim-ce": {withBuildNode({
             checkout scm
@@ -133,165 +140,165 @@ stage("Build") {
 stage("Test") {
     def builders = [:]
     builders["phpunit"] = {
-                withPhp({
-                    try {
-                        sh "cd /home/jenkins/pim && ./bin/phpunit -c app/phpunit.xml.dist --testsuite PIM_Unit_Test --log-junit ${env.WORKSPACE}/junit_output.xml"
-                    } finally {
-                        junit "junit_output.xml"
-                    }
-                })
-                    }
+        withPhp({
+            try {
+                sh "cd /home/jenkins/pim && ./bin/phpunit -c app/phpunit.xml.dist --testsuite PIM_Unit_Test --log-junit ${env.WORKSPACE}/junit_output.xml"
+            } finally {
+                junit "junit_output.xml"
+            }
+        })
+    }
 
     builders["phpspec"] = {
-                withPhp({
-                    sh "cd /home/jenkins/pim && chown -R docker ."
+        withPhp({
+            sh "cd /home/jenkins/pim && chown -R docker ."
 
-                    try {
-                        sh "cd /home/jenkins/pim && su docker -c './bin/phpspec run --format=junit > junit_output.xml'"
-                        sh "mv /home/jenkins/pim/junit_output.xml ${env.WORKSPACE}/"
-                    } finally {
-                        junit "junit_output.xml"
-                    }
-                })
+            try {
+                sh "cd /home/jenkins/pim && su docker -c './bin/phpspec run --format=junit > junit_output.xml'"
+                sh "mv /home/jenkins/pim/junit_output.xml ${env.WORKSPACE}/"
+            } finally {
+                junit "junit_output.xml"
             }
+        })
+    }
     builders["php-cs-fixer"] = {
-                withPhp({
-                    try {
-                        sh "cd /home/jenkins/pim && ./bin/php-cs-fixer fix --diff --dry-run --config=.php_cs.php --format=junit > ${env.WORKSPACE}/junit_output.xml"
-                    } finally {
-                        junit "junit_output.xml"
-                    }
-                })
+        withPhp({
+            try {
+                sh "cd /home/jenkins/pim && ./bin/php-cs-fixer fix --diff --dry-run --config=.php_cs.php --format=junit > ${env.WORKSPACE}/junit_output.xml"
+            } finally {
+                junit "junit_output.xml"
             }
+        })
+    }
     builders["grunt"] = {
-                withGrunt({
-                    sh "cd /home/jenkins/pim && grunt"
-                })
-            }
+        withGrunt({
+            sh "cd /home/jenkins/pim && grunt"
+        })
+    }
     builders["behat-ce"] = {
-                queue(
-                    {
-                    def scenariosCE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
-                    def messagesCE = new net.sf.json.JSONArray()
-                    def i = 0
-                    for (scenarioCE in scenariosCE) {
-                        def lineCE = scenarioCE.trim().substring(0, scenarioCE.indexOf(":", scenarioCE.indexOf(":") + 1))
-                        messagesCE.add([
-                            [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
-                            [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
-                            [container: "php", script: "/usr/sbin/apache2ctl graceful"],
-                            [container: "php", script: "./app/console --env=behat ca:c"],
-                            [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
+        queue(
+            {
+            def scenariosCE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
+            def messagesCE = new net.sf.json.JSONArray()
+            def i = 0
+            for (scenarioCE in scenariosCE) {
+                def lineCE = scenarioCE.trim().substring(0, scenarioCE.indexOf(":", scenarioCE.indexOf(":") + 1))
+                messagesCE.add([
+                    [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
+                    [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
+                    [container: "php", script: "/usr/sbin/apache2ctl graceful"],
+                    [container: "php", script: "./app/console --env=behat ca:c"],
+                    [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
 
-                            [container: "php", script: "touch app/logs/behat.log"],
-                            [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
-                            [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
-                            [
-                                container: "php",
-                                junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
-                                artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
-                                script: "php ./bin/behat --strict  -vv --tags=\""+
-                                        "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app\"" + lineCE
-                            ]
-                        ])
-                    }
-                    return messagesCE
-                }, 50, "ce")
+                    [container: "php", script: "touch app/logs/behat.log"],
+                    [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
+                    [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
+                    [
+                        container: "php",
+                        junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
+                        artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
+                        script: "php ./bin/behat --strict  -vv --tags=\""+
+                                "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app\"" + lineCE
+                    ]
+                ])
             }
+            return messagesCE
+        }, 50, "ce")
+    }
     builders["behat-ee"] = {
-                queue({
-                    scenariosEE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
-                    def messagesEE = new net.sf.json.JSONArray()
-                    for (scenarioEE in scenariosEE) {
-                        def lineEE = scenarioEE.trim().substring(0, scenarioEE.indexOf(":", scenarioEE.indexOf(":") + 1))
-                        messagesEE.add([
-                            [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
-                            [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
-                            [container: "php", script: "/usr/sbin/apache2ctl graceful"],
-                            [container: "php", script: "./app/console -e=behat ca:c"],
-                            [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
-                            [container: "php", script: "touch app/logs/behat.log"],
-                            [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
-                            [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
-                            [
-                                container: "php",
-                                junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
-                                artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
-                                script: "php ./bin/behat -c behat.ci.yml --strict -vv --tags=\""+
-                                        "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app&&~ce\" " + lineEE
-                            ]
-                        ])
-                    }
-                    return messagesEE
-                }, 50, "ee")
+        queue({
+            scenariosEE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
+            def messagesEE = new net.sf.json.JSONArray()
+            for (scenarioEE in scenariosEE) {
+                def lineEE = scenarioEE.trim().substring(0, scenarioEE.indexOf(":", scenarioEE.indexOf(":") + 1))
+                messagesEE.add([
+                    [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
+                    [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
+                    [container: "php", script: "/usr/sbin/apache2ctl graceful"],
+                    [container: "php", script: "./app/console -e=behat ca:c"],
+                    [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
+                    [container: "php", script: "touch app/logs/behat.log"],
+                    [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
+                    [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
+                    [
+                        container: "php",
+                        junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
+                        artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
+                        script: "php ./bin/behat -c behat.ci.yml --strict -vv --tags=\""+
+                                "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app&&~ce\" " + lineEE
+                    ]
+                ])
             }
+            return messagesEE
+        }, 50, "ee")
+    }
     builders["behat-ce-odm"] = {
-                queue(
-                    {
-                    def scenariosCE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
-                    def messagesCE = new net.sf.json.JSONArray()
-                    for (scenarioCE in scenariosCE) {
-                        def lineCE = scenarioCE.trim().substring(0, scenarioCE.indexOf(":", scenarioCE.indexOf(":") + 1))
-                        messagesCE.add([
-                            [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
-                            [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
-                            [container: "php", script: "/usr/sbin/apache2ctl graceful"],
-                            [container: "php", script: "./app/console -e=behat ca:c"],
-                            [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
-                            [container: "php", script: "touch app/logs/behat.log"],
-                            [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
-                            [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
-                            [
-                                container: "php",
-                                junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
-                                artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
-                                script: "php ./bin/behat --strict -c behat.ci.yml -vv --tags=\""+
-                                        "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app\"" + lineCE
-                            ]
-                        ])
-                    }
-                    return messagesCE
-                }, 50, "ceodm")
+        queue(
+            {
+            def scenariosCE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
+            def messagesCE = new net.sf.json.JSONArray()
+            for (scenarioCE in scenariosCE) {
+                def lineCE = scenarioCE.trim().substring(0, scenarioCE.indexOf(":", scenarioCE.indexOf(":") + 1))
+                messagesCE.add([
+                    [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
+                    [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
+                    [container: "php", script: "/usr/sbin/apache2ctl graceful"],
+                    [container: "php", script: "./app/console -e=behat ca:c"],
+                    [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
+                    [container: "php", script: "touch app/logs/behat.log"],
+                    [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
+                    [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
+                    [
+                        container: "php",
+                        junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
+                        artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
+                        script: "php ./bin/behat --strict -c behat.ci.yml -vv --tags=\""+
+                                "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app\"" + lineCE
+                    ]
+                ])
             }
+            return messagesCE
+        }, 50, "ceodm")
+    }
     builders["behat-ee-odm"] = {
-                queue({
-                    scenariosEE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
-                    def messagesEE = new net.sf.json.JSONArray()
-                    for (scenarioEE in scenariosEE) {
-                        def lineEE = scenarioEE.trim().substring(0, scenarioEE.indexOf(":", scenarioEE.indexOf(":") + 1))
-                        messagesEE.add([
-                            [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
-                            [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
-                            [container: "php", script: "/usr/sbin/apache2ctl graceful"],
-                            [container: "php", script: "./app/console -e=behat ca:c"],
-                            [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
-                            [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
-                            [container: "php", script: "touch app/logs/behat.log"],
-                            [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
-                            [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
-                            [
-                                container: "php",
-                                junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
-                                artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
-                                script: "php ./bin/behat -c behat.ci.yml --strict -vv --tags=\""+
-                                        "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app&&~ce\"" + lineEE
-                            ]
-                        ])
-                    }
-                    return messagesEE
-                }, 50, "eeodm")
+        queue({
+            scenariosEE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
+            def messagesEE = new net.sf.json.JSONArray()
+            for (scenarioEE in scenariosEE) {
+                def lineEE = scenarioEE.trim().substring(0, scenarioEE.indexOf(":", scenarioEE.indexOf(":") + 1))
+                messagesEE.add([
+                    [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
+                    [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
+                    [container: "php", script: "/usr/sbin/apache2ctl graceful"],
+                    [container: "php", script: "./app/console -e=behat ca:c"],
+                    [container: "php", script: "./app/console --env=behat pim:install --force --clean "],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump en_US"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump fr_FR"],
+                    [container: "php", script: "./app/console --env=behat oro:translation:dump de_DE"],
+                    [container: "php", script: "touch app/logs/behat.log"],
+                    [container: "php", script: "chmod 777 -R app/cache app/logs/ app/archive app/file_storage"],
+                    [container: "php", script: "mkdir -m 777 -p app/build/logs/behat app/build/logs/consumer "],
+                    [
+                        container: "php",
+                        junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
+                        artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
+                        script: "php ./bin/behat -c behat.ci.yml --strict -vv --tags=\""+
+                                "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app&&~ce\"" + lineEE
+                    ]
+                ])
             }
+            return messagesEE
+        }, 50, "eeodm")
+    }
     try {
         parallel(builders)
     } finally {
@@ -318,15 +325,15 @@ def withBuildNode(body) {
     clearTemplateNames()
     def uuid = UUID.randomUUID().toString()
     withCredentials([string(credentialsId: 'composer-token', variable: 'token')]) {
-            podTemplate(label: "build-" + uuid, containers: [
-            containerTemplate(name: "docker", image: "paulwoelfel/docker-gcloud", ttyEnabled: true, command: 'cat',
-                              envVars: [envVar(key: "DOCKER_API_VERSION", value: "1.23")]),
-            containerTemplate(name: "php", ttyEnabled: true, alwaysPullImage: true, command: 'cat', image: "eu.gcr.io/akeneo-ci/httpd-php:5.6",
-                              envVars: [envVar(key: "COMPOSER_HOME", value: "/shared/.composer"), envVar(key: "COMPOSER_AUTH", value: "{\"github-oauth\":{\"github.com\": \"$token\"}}")]),
-            containerTemplate(name: "node", ttyEnabled: true, command: 'cat', image: "node:8"),
-        ], volumes: [
-            nfsVolume(mountPath: '/shared', serverAddress: "${env.NFS_IP}", serverPath: '/exports', readOnly: false),
-            hostPathVolume(hostPath: "/var/run/docker.sock", mountPath: "/var/run/docker.sock")
+        podTemplate(label: "build-" + uuid, containers: [
+        containerTemplate(name: "docker", image: "paulwoelfel/docker-gcloud", ttyEnabled: true, command: 'cat',
+                          envVars: [envVar(key: "DOCKER_API_VERSION", value: "1.23")]),
+        containerTemplate(name: "php", ttyEnabled: true, alwaysPullImage: true, command: 'cat', image: "eu.gcr.io/akeneo-ci/httpd-php:5.6",
+                          envVars: [envVar(key: "COMPOSER_HOME", value: "/shared/.composer"), envVar(key: "COMPOSER_AUTH", value: "{\"github-oauth\":{\"github.com\": \"$token\"}}")]),
+        containerTemplate(name: "node", ttyEnabled: true, command: 'cat', image: "node:8"),
+    ], volumes: [
+        nfsVolume(mountPath: '/shared', serverAddress: "${env.NFS_IP}", serverPath: '/exports', readOnly: false),
+        hostPathVolume(hostPath: "/var/run/docker.sock", mountPath: "/var/run/docker.sock")
         ]) {
             node("build-" + uuid) {
                 dir('/home/jenkins/pim') {
@@ -428,9 +435,7 @@ def queue(body, scale, edition) {
                 sh "gcloud.phar pubsub:topic:create ${NODE_NAME}-results"
                 sh "gcloud.phar pubsub:subscription:create ${NODE_NAME} ${NODE_NAME}-subscription"
                 sh "gcloud.phar pubsub:subscription:create ${NODE_NAME}-results ${NODE_NAME}-results-subscription"
-
                 def size = messages.size()
-
                 writeJSON file: 'output.json', json: messages
                 sh "gcloud.phar pubsub:message:publish ${NODE_NAME} output.json"
                 sh "sed -i 's#JOB_NAME#${NODE_NAME}#g' /home/jenkins/pim/.ci/k8s/pubsub_consumer_job.yaml"
