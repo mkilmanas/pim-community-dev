@@ -1,20 +1,20 @@
 <?php
 
-namespace spec\Pim\Bundle\CatalogBundle\Elasticsearch\Filter\Field;
+namespace spec\Pim\Bundle\CatalogBundle\Elasticsearch\Filter\Field\ProductModel;
 
 use Akeneo\Component\StorageUtils\Exception\InvalidPropertyTypeException;
-use Pim\Bundle\CatalogBundle\Elasticsearch\Filter\Field\CompletenessFilter;
+use Pim\Bundle\CatalogBundle\Elasticsearch\Filter\Field\ProductModel\CompleteOrIncompleteFilter;
 use PhpSpec\ObjectBehavior;
 use Pim\Bundle\CatalogBundle\Elasticsearch\SearchQueryBuilder;
 use Pim\Component\Catalog\Query\Filter\FieldFilterInterface;
 use Pim\Component\Catalog\Query\Filter\Operators;
 use Prophecy\Argument;
 
-class CompletenessFilterSpec extends ObjectBehavior
+class CompleteFilterSpec extends ObjectBehavior
 {
     function let(SearchQueryBuilder $sqb)
     {
-        $this->beConstructedWith(['completeness'], [
+        $this->beConstructedWith(['complete'], [
             'COMPLETE',
             'INCOMPLETE',
         ]);
@@ -24,7 +24,7 @@ class CompletenessFilterSpec extends ObjectBehavior
 
     function it_is_initializable()
     {
-        $this->shouldHaveType(CompletenessFilter::class);
+        $this->shouldHaveType(CompleteOrIncompleteFilter::class);
     }
 
     function it_is_a_fieldFilter()
@@ -53,12 +53,15 @@ class CompletenessFilterSpec extends ObjectBehavior
     {
         $sqb->addFilter(
             [
-                'bool' => [
-                    'should' => [
-                        ['term' => ['completeness.ecommerce.en_US' => 100]],
-                        ['term' => ['at_least_complete.ecommerce.en_US' => 1]],
+                'query' => [
+                    'constant_score' => [
+                        'filter' => [
+                            'term' => [
+                                'at_least_complete.ecommerce.en_US' => 1,
+                            ],
+                        ],
                     ],
-                ]
+                ],
             ]
         )->shouldBeCalled();
 
@@ -69,12 +72,15 @@ class CompletenessFilterSpec extends ObjectBehavior
     {
         $sqb->addFilter(
             [
-                'bool' => [
-                    'should' => [
-                        ['range' => ['completeness.ecommerce.fr_FR' => ['lt' => 100]]],
-                        ['term' => ['at_least_incomplete.ecommerce.fr_FR' => 1]],
+                'query' => [
+                    'constant_score' => [
+                        'filter' => [
+                            'term' => [
+                                'at_least_incomplete.ecommerce.en_US' => 1,
+                            ],
+                        ],
                     ],
-                ]
+                ],
             ]
         )->shouldBeCalled();
 

@@ -1,13 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace Pim\Bundle\CatalogBundle\Elasticsearch\Filter\Field;
+namespace Pim\Bundle\CatalogBundle\Elasticsearch\Filter\Field\ProductModel;
 
+use Akeneo\Component\StorageUtils\Exception\InvalidPropertyException;
+use Pim\Bundle\CatalogBundle\Elasticsearch\Filter\Field\AbstractFieldFilter;
 use Pim\Component\Catalog\Query\Filter\FieldFilterInterface;
 
 /**
- * Filter in/complete product model and product depending their completeness. This filter mixes
- * CompletenessFilter and CompleteFilter to display result in the datagrid.
+ * Filter the product model which are complete or incomplete. The business rules are:
+ *   - complete: A product model is displayed if at least one of its product is complete
+ *   - incomplete: A product model is displayed if at least one of its product is incomplete.
  *
  * The supported operator are:
  *   - COMPLETE
@@ -17,7 +20,7 @@ use Pim\Component\Catalog\Query\Filter\FieldFilterInterface;
  * @copyright 2017 Akeneo SAS (http://www.akeneo.com)
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
-class CompletenessFilter extends AbstractFieldFilter implements FieldFilterInterface
+class CompleteFilter extends AbstractFieldFilter implements FieldFilterInterface
 {
     /**
      * @param array $supportedFields
@@ -31,6 +34,10 @@ class CompletenessFilter extends AbstractFieldFilter implements FieldFilterInter
 
     /**
      * {@inheritdoc}
+     *
+     * This filter only works with the product and product model index, the filter uses the following field:
+     *   - at_least_complete
+     *   - constant_score
      */
     public function addFieldFilter($field, $operator, $value, $locale = null, $channel = null, $options = [])
     {

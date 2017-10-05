@@ -64,7 +64,7 @@ abstract class AbstractAction implements ActionInterface
     }
 
     /**
-     * Assert required single option
+     * AssertEntityWithValues required single option
      *
      * @param string $optionName
      *

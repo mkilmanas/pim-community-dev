@@ -22,7 +22,7 @@ class SystemAwareResolverTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Assert definition empty
+     * AssertEntityWithValues definition empty
      */
     public function testResolveEmpty()
     {

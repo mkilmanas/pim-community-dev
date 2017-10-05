@@ -2264,7 +2264,7 @@ class FixturesContext extends BaseFixturesContext
     }
 
     /**
-     * Assert than 2 arrays are equal, regardless the order of the elements.
+     * AssertEntityWithValues than 2 arrays are equal, regardless the order of the elements.
      *
      * @param $array1
      * @param $array2
