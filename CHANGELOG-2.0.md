@@ -4,6 +4,10 @@
 
 - PIM-6898: Fixes some data can break ES index and crashes new products indexing
 
+## Better manage products with variants!
+
+- API-381: Create family variant via API
+
 ## Better UI\UX!
 
 - PIM-6667: Update loading mask design

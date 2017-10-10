@@ -1,0 +1,8 @@
+parameters:
+    pim_api.updater.family_variant.class: Pim\Component\Api\Updater\FamilyVariantUpdater
+
+services:
+    pim_api.updater.family_variant:
+        class: '%pim_api.updater.family_variant.class%'
+        arguments:
+            - '@pim_catalog.updater.family_variant'
