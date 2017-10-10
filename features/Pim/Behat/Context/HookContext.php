@@ -267,7 +267,7 @@ class HookContext extends PimContext
     public function removeTmpDir()
     {
         $fs = new \Symfony\Component\Filesystem\Filesystem();
-        $fs->remove(self::$placeholderValues['%tmp%']);
+        $fs->remove(self::$placeholderValues['%tmp%'] . '/*');
     }
 
     /**
