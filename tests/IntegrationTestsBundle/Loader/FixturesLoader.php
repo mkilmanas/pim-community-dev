@@ -75,12 +75,13 @@ class FixturesLoader implements FixturesLoaderInterface
     public function load(Configuration $configuration): void
     {
         $this->systemUserAuthenticator->createSystemUser();
-        $this->container->get('akeneo_elasticsearch.client.product_model')->resetIndex();
 
         $files = $this->getFilesToLoad($configuration->getCatalogDirectories());
         $fixturesHash = $this->getHashForFiles($files);
 
+        $this->container->get('akeneo_elasticsearch.client.product_model')->resetIndex();
         $this->container->get('akeneo_elasticsearch.client.product')->resetIndex();
+        $this->container->get('akeneo_elasticsearch.client.product_and_product_model')->resetIndex();
 
         $dumpFile = sys_get_temp_dir().self::CACHE_DIR.$fixturesHash.'.sql';
 
@@ -90,7 +91,6 @@ class FixturesLoader implements FixturesLoaderInterface
             $this->restoreDatabase($dumpFile);
             $this->clearAclCache();
 
-            $this->container->get('akeneo_elasticsearch.client.product_and_product_model')->resetIndex();
 
             $this->indexProductModels();
             $this->indexProducts();
@@ -99,7 +99,6 @@ class FixturesLoader implements FixturesLoaderInterface
         }
 
         $this->databaseSchemaHandler->reset();
-        $this->container->get('akeneo_elasticsearch.client.product_and_product_model')->resetIndex();
 
         $this->loadData($configuration);
         $this->dumpDatabase($dumpFile);

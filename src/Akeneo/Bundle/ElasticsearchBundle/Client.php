@@ -3,6 +3,7 @@
 namespace Akeneo\Bundle\ElasticsearchBundle;
 
 use Akeneo\Bundle\ElasticsearchBundle\Exception\IndexationException;
+use Akeneo\Bundle\ElasticsearchBundle\Exception\IndexDeletionException;
 use Akeneo\Bundle\ElasticsearchBundle\Exception\MissingIdentifierException;
 use Akeneo\Bundle\ElasticsearchBundle\IndexConfiguration\Loader;
 use Elasticsearch\Client as NativeClient;
@@ -18,6 +19,10 @@ use Elasticsearch\ClientBuilder;
  */
 class Client
 {
+    private const MAX_RETRY = 10;
+
+    private const WAIT_TIME = 1;
+
     /** @var ClientBuilder */
     private $builder;
 
@@ -260,7 +265,19 @@ class Client
     {
         if ($this->hasIndex()) {
             $this->deleteIndex();
+
+            $retry = 0;
+            while ($this->hasIndex()) {
+                if ($retry >= self::MAX_RETRY) {
+                    throw new IndexDeletionException();
+                }
+
+                sleep(self::WAIT_TIME);
+                $retry++;
+            }
+
         }
+
 
         $this->createIndex();
     }
