@@ -11,12 +11,12 @@
 
             <div class="AknWidget-content AknWidget-content--withPadding">
                 <div class="AknSquareList AknSquareList--centered">
-                <% _.each(choices, function(choice) { %>
-                    <span class="AknSquareList-item product-choice" data-form="<%- choice.form %>">
+                <% _.each(choices, function(choice, key) { %>
+                    <a class="AknSquareList-item product-choice" title="<%- choice.title %>" data-form="<%- choice.form %>">
                         <img src="/bundles/pimui/images/<%- choice.icon %>.svg" class="AknSquareList-icon">
                         <img src="/bundles/pimui/images/<%- choice.icon %>.svg" class="AknSquareList-icon AknSquareList-icon--selected">
                         <div><%- choice.title %></div>
-                    </span>
+                    </a>
                 <% }); %>
                 </div>
             </div>
