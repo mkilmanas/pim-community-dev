@@ -3,6 +3,7 @@
 ## Better manage products with variants!
 
 - API-399: Create a product model
+- API-404: Update partially a product model
 
 ## Bug fixes
 
