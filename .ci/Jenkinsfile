@@ -67,7 +67,7 @@ stage("Build") {
                     sh "mkdir -m 777 vendor"
 
                     container("php") {
-                        sh "composer require --dev --no-update liuggio/fastest:~1.4"
+                        // sh "composer require --dev --no-update liuggio/fastest:~1.4"
                         sh "php -d memory_limit=-1 /usr/local/bin/composer update --optimize-autoloader --no-interaction --no-progress --prefer-dist --ansi"
 
                         // Required to avoid permission error when "deleteDir()"
@@ -95,7 +95,7 @@ stage("Build") {
 //                        for (feature in features) {
 //                            sh "sed -i \"/features:/a\\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ \\ -\\ ${feature}\" behat.yml"
 //                        }
-			            sh "sed -i \"/extensions:/a\\ \\ \\ \\ \\ \\ \\ \\ Liuggio\\\\\\\\Fastest\\\\\\\\Behat2\\\\\\\\ListFeaturesExtension\\\\\\\\Extension: ~\" behat.yml"
+			            // sh "sed -i \"/extensions:/a\\ \\ \\ \\ \\ \\ \\ \\ Liuggio\\\\\\\\Fastest\\\\\\\\Behat2\\\\\\\\ListFeaturesExtension\\\\\\\\Extension: ~\" behat.yml"
                         sh "sed -i \"s#http://akeneo#http://127.0.0.1#g\" behat.yml"
                         sh "sed -i \"s#http://selenium#http://127.0.0.1#g\" behat.yml"
                         sh "sed -i \"s#http://selenium#http://127.0.0.1#g\" behat.yml"
