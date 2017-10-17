@@ -232,10 +232,11 @@ stage("Test") {
             "behat-ce": {
                 if (launchBehatTests.equals("yes")&& editions.contains("ce")) {
                     queue({
-                        def scenariosCE = sh (returnStdout: true, script: "cd /home/jenkins/pim && php ./bin/behat --list-scenarios").tokenize('\n')
+                        def scenariosCE = sh (returnStdout: true, script: 'find /home/jenkins/pim/features -name "*.feature" -exec grep -En "(Scenario|Scenario Outline): " {} +' ).tokenize('\n')
                         def messagesCE = new net.sf.json.JSONArray()
 
                         for (scenarioCE in scenariosCE) {
+                            def lineCE = scenarioCE.trim().substring(0, scenarioCE.indexOf(":", scenarioCE.indexOf(":") + 1))
                             messagesCE.add([
                                 [container: "php", script: "cp .ci/akeneo-behat.conf /etc/apache2/sites-available/000-default.conf"],
                                 [container: "php", script: "rm -rf /tmp/behat/screenshots/*"],
@@ -253,7 +254,8 @@ stage("Test") {
                                     container: "php",
                                     junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
                                     artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
-                                    script: "php ./bin/behat --strict -vv " + scenarioCE
+                                    script: "php ./bin/behat -c behat.ci.yml --strict --tags=\" " +
+                                "~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app\" -vv " + lineCE
                                 ]
                             ])
                         }
