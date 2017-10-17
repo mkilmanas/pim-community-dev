@@ -291,12 +291,13 @@ stage("Test") {
                                     container: "php",
                                     junit: [in: "/home/jenkins/pim/app/build/logs/behat/", name: "*.xml"],
                                     artifacts: [in: "/tmp/behat/screenshots", name: "*.png"],
-                                    script: "php ./bin/behat --strict -vv " + scenarioEE
+                                    script: "php ./bin/behat -c behat.ci.yml --strict -vv " +
+                                "--tags=\"~skip&&~skip-pef&&~doc&&~unstable&&~unstable-app&&~deprecated&&~@unstable-app&&~ce\" " + lineEE
                                 ]
                             ])
                         }
                         return messagesEE
-                    }, 50, "ee")
+                    }, 10, "ee")
                 } else {
                     echo "Skipping behat test"
                 }
@@ -331,7 +332,7 @@ stage("Test") {
                         }
 
                         return messagesCE
-                    }, 50, "ceodm")
+                    }, 10, "ceodm")
                 } else {
                     echo "Skipping behat test"
                 }
